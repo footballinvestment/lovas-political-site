@@ -1,27 +1,52 @@
-// src/app/admin/posts/new/page.tsx
+// src/app/admin/posts/[id]/edit/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 
-export default function NewPostPage() {
+interface PostData {
+  title: string;
+  content: string;
+  status: string;
+}
+
+export default function EditPostPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState<PostData>({
     title: "",
     content: "",
     status: "DRAFT",
   });
 
+  useEffect(() => {
+    const fetchPost = async () => {
+      try {
+        const response = await fetch(`/api/posts/${params.id}`);
+        if (!response.ok) throw new Error("Bejegyzés nem található");
+        const data = await response.json();
+        setFormData(data);
+      } catch (error) {
+        alert("Hiba történt a bejegyzés betöltése során");
+        router.push("/admin/posts");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPost();
+  }, [params.id, router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    setSaving(true);
 
     try {
-      const response = await fetch("/api/posts", {
-        method: "POST",
+      const response = await fetch(`/api/posts/${params.id}`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
@@ -29,16 +54,24 @@ export default function NewPostPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Hiba történt a bejegyzés létrehozása során");
+        throw new Error("Hiba történt a bejegyzés módosítása során");
       }
 
       router.push("/admin/posts");
     } catch (error) {
       alert(error instanceof Error ? error.message : "Hiba történt");
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -50,7 +83,9 @@ export default function NewPostPage() {
           <ChevronLeft className="w-4 h-4" />
           Vissza
         </Link>
-        <h1 className="text-2xl font-bold text-gray-900">Új bejegyzés</h1>
+        <h1 className="text-2xl font-bold text-gray-900">
+          Bejegyzés szerkesztése
+        </h1>
       </div>
 
       <form
@@ -125,10 +160,10 @@ export default function NewPostPage() {
             </Link>
             <button
               type="submit"
-              disabled={loading}
+              disabled={saving}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
-              {loading ? "Mentés..." : "Mentés"}
+              {saving ? "Mentés..." : "Mentés"}
             </button>
           </div>
         </div>

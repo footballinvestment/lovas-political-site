@@ -1,78 +1,82 @@
-// src/app/admin/posts/page.tsx
+// src/app/admin/page.tsx
 "use client";
 
-import { useState } from "react";
-import { PlusIcon, ChevronLeftIcon } from "lucide-react";
+import { Activity, FileText, Calendar, MessageSquare } from "lucide-react";
 import Link from "next/link";
 
-export default function PostsPage() {
-  const [posts, setPosts] = useState([]);
+export default function AdminPage() {
+  const stats = [
+    {
+      title: "Bejegyzések",
+      value: "0",
+      description: "Összes bejegyzés",
+      icon: FileText,
+      color: "bg-blue-500",
+      link: "/admin/posts",
+    },
+    {
+      title: "Események",
+      value: "0",
+      description: "Összes esemény",
+      icon: Calendar,
+      color: "bg-purple-500",
+      link: "/admin/events",
+    },
+    {
+      title: "Üzenetek",
+      value: "0",
+      description: "Új üzenet",
+      icon: MessageSquare,
+      color: "bg-green-500",
+      link: "/admin/messages",
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 pt-24">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          {/* Header */}
-          <div className="flex justify-between items-center mb-8">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-gray-900">Vezérlőpult</h1>
+        <div className="flex items-center gap-2">
+          <Activity className="w-5 h-5 text-gray-400" />
+          <span className="text-sm text-gray-500">
+            Utolsó frissítés: épp most
+          </span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {stats.map((stat) => (
+          <Link
+            href={stat.link}
+            key={stat.title}
+            className="block p-6 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow"
+          >
             <div className="flex items-center gap-4">
-              <Link href="/admin" className="text-gray-600 hover:text-gray-800">
-                <ChevronLeftIcon size={24} />
-              </Link>
-              <h1 className="text-2xl font-bold">Bejegyzések kezelése</h1>
+              <div className={`${stat.color} p-3 rounded-lg`}>
+                <stat.icon className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-600">{stat.description}</p>
+                <p className="text-2xl font-semibold">{stat.value}</p>
+              </div>
             </div>
+          </Link>
+        ))}
+      </div>
 
-            <Link
-              href="/admin/posts/new"
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <PlusIcon size={20} />
-              Új bejegyzés
-            </Link>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-xl shadow-sm">
+          <h2 className="text-lg font-semibold mb-4">Legutóbbi bejegyzések</h2>
+          <p className="text-gray-500 text-sm italic">
+            Még nincsenek bejegyzések
+          </p>
+        </div>
 
-          {/* Bejegyzések listája */}
-          <div className="overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="text-left border-b">
-                  <th className="pb-3 pl-4">Cím</th>
-                  <th className="pb-3">Státusz</th>
-                  <th className="pb-3">Létrehozva</th>
-                  <th className="pb-3">Műveletek</th>
-                </tr>
-              </thead>
-              <tbody>
-                {posts.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="py-8 text-center text-gray-500">
-                      Még nincsenek bejegyzések. Hozzon létre egyet az "Új
-                      bejegyzés" gombbal!
-                    </td>
-                  </tr>
-                ) : (
-                  posts.map((post) => (
-                    <tr key={post.id} className="border-b">
-                      <td className="py-4 pl-4">{post.title}</td>
-                      <td className="py-4">{post.status}</td>
-                      <td className="py-4">
-                        {new Date(post.createdAt).toLocaleDateString("hu-HU")}
-                      </td>
-                      <td className="py-4">
-                        <div className="flex gap-2">
-                          <button className="text-blue-600 hover:text-blue-800">
-                            Szerkesztés
-                          </button>
-                          <button className="text-red-600 hover:text-red-800">
-                            Törlés
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+        <div className="bg-white p-6 rounded-xl shadow-sm">
+          <h2 className="text-lg font-semibold mb-4">Közelgő események</h2>
+          <p className="text-gray-500 text-sm italic">
+            Még nincsenek események
+          </p>
         </div>
       </div>
     </div>
