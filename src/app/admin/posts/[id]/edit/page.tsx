@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
+import RichTextEditor from "@/components/editor/RichTextEditor";
 
 interface PostData {
   title: string;
@@ -90,7 +91,7 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
 
       <form
         onSubmit={handleSubmit}
-        className="max-w-2xl bg-white rounded-xl shadow-sm p-6"
+        className="max-w-4xl bg-white rounded-xl shadow-sm p-6"
       >
         <div className="space-y-6">
           <div>
@@ -119,15 +120,9 @@ export default function EditPostPage({ params }: { params: { id: string } }) {
             >
               Tartalom
             </label>
-            <textarea
-              id="content"
-              value={formData.content}
-              onChange={(e) =>
-                setFormData({ ...formData, content: e.target.value })
-              }
-              rows={10}
-              className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
+            <RichTextEditor
+              content={formData.content}
+              onChange={(content) => setFormData({ ...formData, content })}
             />
           </div>
 

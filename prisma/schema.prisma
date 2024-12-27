@@ -1,27 +1,47 @@
 // prisma/schema.prisma
 generator client {
-  provider = "prisma-client-js"
+ provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+ provider = "mysql"
+ url      = env("DATABASE_URL")
 }
 
 model Post {
-  id        String   @id @default(cuid())
-  title     String   @db.VarChar(255)
-  slug      String   @unique @db.VarChar(255)
-  content   String   @db.Text
-  excerpt   String?  @db.Text
-  status    Status   @default(DRAFT)
-  imageUrl  String?  @db.VarChar(255)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+ id        String   @id @default(cuid())
+ title     String   @db.VarChar(255)
+ slug      String   @unique @db.VarChar(255)
+ content   String   @db.Text
+ excerpt   String?  @db.Text
+ status    Status   @default(DRAFT)
+ imageUrl  String?  @db.VarChar(255)
+ createdAt DateTime @default(now())
+ updatedAt DateTime @updatedAt
 }
 
 enum Status {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
+ DRAFT
+ PUBLISHED
+ ARCHIVED
+}
+
+model Event {
+ id          String      @id @default(cuid())
+ title       String      @db.VarChar(255)
+ description String      @db.Text
+ location    String      @db.VarChar(255)
+ startDate   DateTime
+ endDate     DateTime
+ status      EventStatus @default(UPCOMING)  
+ imageUrl    String?     @db.VarChar(255)
+ createdAt   DateTime    @default(now())
+ updatedAt   DateTime    @updatedAt
+}
+
+enum EventStatus {
+ UPCOMING
+ ONGOING  
+ COMPLETED
+ CANCELLED
 }
