@@ -1,4 +1,5 @@
 import React from "react";
+import { ChevronRight } from "lucide-react";
 import ProgramCards from "@/components/sections/ProgramCards";
 
 export default function Home() {
