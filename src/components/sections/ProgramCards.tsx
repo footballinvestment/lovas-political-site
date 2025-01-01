@@ -7,8 +7,8 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-  CardContent,
 } from "@/components/ui/card";
+import { useThemeColors } from "@/hooks/useThemeColors";
 
 interface Program {
   id: string;
@@ -25,6 +25,7 @@ const ProgramCards = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hoveredCard, setHoveredCard] = useState<number | null>(null);
+  const colors = useThemeColors();
 
   useEffect(() => {
     const fetchPrograms = async () => {
@@ -34,7 +35,6 @@ const ProgramCards = () => {
           throw new Error("Failed to fetch programs");
         }
         const data = await response.json();
-        // Sort by priority and take top 3
         const sortedPrograms = data
           .sort((a: Program, b: Program) => a.priority - b.priority)
           .slice(0, 3);
@@ -85,8 +85,11 @@ const ProgramCards = () => {
             onMouseLeave={() => setHoveredCard(null)}
           >
             <div
-              className="absolute inset-0 bg-gradient-to-br from-[#6DAEF0] to-[#8DEBD1] transition-opacity duration-300"
-              style={{ opacity: hoveredCard === index ? 1 : 0.9 }}
+              className="absolute inset-0 transition-opacity duration-300"
+              style={{
+                background: `linear-gradient(to bottom right, ${colors.gradientFrom}, ${colors.gradientTo})`,
+                opacity: hoveredCard === index ? 1 : 0.9,
+              }}
             />
             <div className="relative p-8">
               <div className="flex justify-between items-start mb-4">
@@ -94,12 +97,17 @@ const ProgramCards = () => {
                   {program.title}
                 </h3>
                 {program.status === "folyamatban" && (
-                  <span className="px-2 py-1 bg-white/20 rounded-full text-xs text-white">
+                  <span
+                    className="px-2 py-1 rounded-full text-xs text-white"
+                    style={{ backgroundColor: `${colors.primary}40` }} // 40 az átlátszóság hex értéke
+                  >
                     Folyamatban
                   </span>
                 )}
               </div>
-              <p className="text-white/90">{program.description}</p>
+              <p style={{ color: colors.textSecondary }}>
+                {program.description}
+              </p>
               <ChevronRight className="h-6 w-6 text-white absolute bottom-8 right-8 opacity-0 group-hover:opacity-100 transition-all duration-300" />
             </div>
           </div>
