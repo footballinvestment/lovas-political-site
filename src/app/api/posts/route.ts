@@ -1,10 +1,36 @@
+// src/app/api/posts/route.ts
+import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import { generateSlug, generateExcerpt } from "@/utils/posts";
+import { generateSlug } from "@/utils/posts";
 
-const prisma = new PrismaClient();
+// POST /api/posts - Új bejegyzés létrehozása
+export async function POST(req: Request) {
+  try {
+    const data = await req.json();
 
-// GET /api/posts
+    // Létrehozzuk a slug-ot a címből
+    const slug = generateSlug(data.title);
+
+    const post = await prisma.post.create({
+      data: {
+        title: data.title,
+        content: data.content,
+        slug: slug,
+        status: data.status,
+        imageUrl: data.imageUrl || null,
+      },
+    });
+
+    return NextResponse.json(post);
+  } catch (error) {
+    console.error("[POSTS_POST]", error);
+    return new NextResponse("Hiba történt a bejegyzés létrehozásakor", {
+      status: 500,
+    });
+  }
+}
+
+// GET /api/posts - Bejegyzések listázása
 export async function GET() {
   try {
     const posts = await prisma.post.findMany({
@@ -13,42 +39,11 @@ export async function GET() {
       },
     });
 
-    return new NextResponse(JSON.stringify(posts), {
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-      },
-    });
+    return NextResponse.json(posts);
   } catch (error) {
-    console.error("Error:", error);
-    return NextResponse.json(
-      { error: "Hiba történt a bejegyzések lekérése közben." },
-      { status: 500 }
-    );
-  }
-}
-
-// POST /api/posts
-export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    const { title, content, status = "DRAFT", imageUrl } = body;
-
-    const post = await prisma.post.create({
-      data: {
-        title,
-        slug: generateSlug(title),
-        content,
-        excerpt: generateExcerpt(content),
-        status,
-        imageUrl,
-      },
+    console.error("[POSTS_GET]", error);
+    return new NextResponse("Hiba történt a bejegyzések lekérésekor", {
+      status: 500,
     });
-
-    return NextResponse.json(post);
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Hiba történt a bejegyzés létrehozása közben." },
-      { status: 500 }
-    );
   }
 }

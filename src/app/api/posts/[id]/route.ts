@@ -1,10 +1,9 @@
+// src/app/api/posts/[id]/route.ts
+import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-import { generateSlug, generateExcerpt } from "@/utils/posts";
+import { generateSlug } from "@/utils/posts";
 
-const prisma = new PrismaClient();
-
-// GET /api/posts/[id]
+// GET - Egy bejegyzés lekérése
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
@@ -15,52 +14,46 @@ export async function GET(
     });
 
     if (!post) {
-      return NextResponse.json(
-        { error: "A bejegyzés nem található." },
-        { status: 404 }
-      );
+      return new NextResponse("Bejegyzés nem található", { status: 404 });
     }
 
     return NextResponse.json(post);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Hiba történt a bejegyzés lekérése közben." },
-      { status: 500 }
-    );
+    console.error("[POST_GET]", error);
+    return new NextResponse("Hiba történt", { status: 500 });
   }
 }
 
-// PUT /api/posts/[id]
-export async function PUT(
+// PATCH - Bejegyzés módosítása
+export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
     const body = await request.json();
-    const { title, content, status, imageUrl } = body;
+
+    // Ha változott a cím, generáljunk új slug-ot
+    const slug = body.title ? generateSlug(body.title) : undefined;
 
     const post = await prisma.post.update({
       where: { id: params.id },
       data: {
-        title,
-        slug: generateSlug(title),
-        content,
-        excerpt: generateExcerpt(content),
-        status,
-        imageUrl,
+        title: body.title,
+        content: body.content,
+        slug: slug,
+        status: body.status,
+        imageUrl: body.imageUrl,
       },
     });
 
     return NextResponse.json(post);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Hiba történt a bejegyzés módosítása közben." },
-      { status: 500 }
-    );
+    console.error("[POST_PATCH]", error);
+    return new NextResponse("Hiba történt a módosítás során", { status: 500 });
   }
 }
 
-// DELETE /api/posts/[id]
+// DELETE - Bejegyzés törlése
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
@@ -70,14 +63,9 @@ export async function DELETE(
       where: { id: params.id },
     });
 
-    return NextResponse.json(
-      { message: "A bejegyzés sikeresen törölve." },
-      { status: 200 }
-    );
+    return new NextResponse(null, { status: 204 });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Hiba történt a bejegyzés törlése közben." },
-      { status: 500 }
-    );
+    console.error("[POST_DELETE]", error);
+    return new NextResponse("Hiba történt a törlés során", { status: 500 });
   }
 }
