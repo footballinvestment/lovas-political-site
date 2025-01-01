@@ -1,0 +1,18 @@
+=== Bejegyzéskezelő Rendszer Tesztek ===
+Dátum: 2024 Dec 28 Szo 20:54:57 CET
+
+1. Környezet ellenőrzése
+Teszt: Node.js verzió ellenőrzése ...
+✓ Sikeres - Node.js verzió ellenőrzése
+Teszt: NPM verzió ellenőrzése ...
+✓ Sikeres - NPM verzió ellenőrzése
+Teszt: Next.js szerver fut ...
+✗ Sikertelen - Next.js szerver fut
+\n2. API Tesztek
+Bejegyzés létrehozása...
+✗ Nem sikerült létrehozni a bejegyzést
+\n=== Teszt Összegzés ===
+Sikeres tesztek: 2
+Sikertelen tesztek: 2
+Log fájl: test_results_20241228_205457.log
+HTML jelentés: test_report_20241228_205457.html

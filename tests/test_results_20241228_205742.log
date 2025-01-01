@@ -1,0 +1,24 @@
+=== Bejegyzéskezelő Rendszer Tesztek ===
+Dátum: 2024 Dec 28 Szo 20:57:42 CET
+
+1. Környezet ellenőrzése
+Teszt: Node.js verzió ellenőrzése ...
+✓ Sikeres - Node.js verzió ellenőrzése
+Teszt: NPM verzió ellenőrzése ...
+✓ Sikeres - NPM verzió ellenőrzése
+Teszt: Next.js szerver fut ...
+✓ Sikeres - Next.js szerver fut
+\n2. API Tesztek
+Bejegyzés létrehozása...
+✓ Bejegyzés létrehozva (ID: cm58lspwx0000fa66ogw2egvv)
+Teszt: Bejegyzés lekérése ...
+✓ Sikeres - Bejegyzés lekérése
+Teszt: Bejegyzés módosítása ...
+✓ Sikeres - Bejegyzés módosítása
+Teszt: Bejegyzés törlése ...
+✓ Sikeres - Bejegyzés törlése
+\n=== Teszt Összegzés ===
+Sikeres tesztek: 7
+Sikertelen tesztek: 0
+Log fájl: test_results_20241228_205742.log
+HTML jelentés: test_report_20241228_205742.html
