@@ -6,7 +6,7 @@ import { ThemeProvider } from "@/context/ThemeContext";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Mindenki Magyarországa Néppárt",
+  title: "Lovas Zoltán György",
   description: "Modern megoldások, átlátható kormányzás, fenntartható fejlődés",
 };
 
