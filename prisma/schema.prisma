@@ -1,7 +1,6 @@
 generator client {
   provider = "prisma-client-js"
 }
-
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
@@ -32,6 +31,20 @@ model Event {
   updatedAt   DateTime    @updatedAt
 }
 
+model Theme {
+  id          String    @id @default(cuid())
+  name        String    @db.VarChar(255)
+  description String?   @db.Text
+  fromColor   String    @db.VarChar(255)
+  toColor     String    @db.VarChar(255)
+  textColor   String    @db.VarChar(255)
+  type        ThemeType
+  category    String?   @db.VarChar(255)
+  isActive    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
 model Account {
   id                String  @id
   userId            String
@@ -46,7 +59,6 @@ model Account {
   id_token          String? @db.Text
   session_state     String?
   User              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   @@unique([provider, providerAccountId])
   @@index([userId], map: "Account_userId_fkey")
 }
@@ -57,7 +69,6 @@ model Session {
   userId       String
   expires      DateTime
   User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   @@index([userId], map: "Session_userId_fkey")
 }
 
@@ -92,4 +103,35 @@ enum User_role {
   ADMIN
   EDITOR
   MODERATOR
+}
+
+enum ThemeType {
+  GLOBAL
+  PROGRAM
+  NEWS
+  EVENTS
+  CATEGORY
+}
+
+enum ContactStatus {
+  NEW
+  IN_PROGRESS
+  CLOSED
+}
+
+model Contact {
+  id              String        @id @default(cuid())
+  name            String
+  email           String
+  phone           String?
+  subject         String
+  message         String        @db.Text
+  district        String?
+  preferredContact String       @default("email")
+  newsletter      Boolean       @default(false)
+  status          ContactStatus @default(NEW)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  @@map("contacts")
 }
