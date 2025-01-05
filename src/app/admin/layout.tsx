@@ -1,13 +1,13 @@
 "use client";
-
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   FileText,
   Calendar,
   Home,
-  Palette, // Új ikon a témákhoz
+  Palette,
   LogOut,
+  MessageSquare, // Új ikon az üzenetekhez
 } from "lucide-react";
 
 export default function AdminLayout({
@@ -16,7 +16,6 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-
   const menuItems = [
     {
       title: "Kezdőlap",
@@ -34,7 +33,12 @@ export default function AdminLayout({
       icon: Calendar,
     },
     {
-      title: "Témák", // Új menüpont
+      title: "Üzenetek", // Új menüpont
+      href: "/admin/messages",
+      icon: MessageSquare,
+    },
+    {
+      title: "Témák",
       href: "/admin/themes",
       icon: Palette,
     },
@@ -58,13 +62,11 @@ export default function AdminLayout({
               Admin Panel
             </Link>
           </div>
-
           {/* Menü elemek */}
           <nav className="flex-1 p-4 space-y-1">
             {menuItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
-
               return (
                 <Link
                   key={item.href}
@@ -81,7 +83,6 @@ export default function AdminLayout({
               );
             })}
           </nav>
-
           {/* Kijelentkezés */}
           <div className="p-4 border-t">
             <button className="flex items-center w-full px-4 py-2 text-sm text-red-600 rounded-lg hover:bg-red-50">
@@ -91,7 +92,6 @@ export default function AdminLayout({
           </div>
         </div>
       </aside>
-
       {/* Fő tartalom */}
       <main className="ml-64 p-8">{children}</main>
     </div>

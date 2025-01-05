@@ -1,13 +1,15 @@
-import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { Metadata } from "next";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 import { ThemeProvider } from "@/context/ThemeContext";
+import Navigation from "@/components/Navigation";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Lovas Zoltán György",
-  description: "Modern megoldások, átlátható kormányzás, fenntartható fejlődés",
+  title: "Mindenki Magyarországa Néppárt",
+  description: "Mindenki Magyarországa Néppárt hivatalos weboldala",
 };
 
 export default function RootLayout({
@@ -16,11 +18,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="hu" suppressHydrationWarning>
-      <body
-        className={`${inter.className} min-h-screen bg-white transition-colors duration-300 dark:bg-[#1C1C1C]`}
-      >
-        <ThemeProvider>{children}</ThemeProvider>
+    <html lang="hu">
+      <body className={inter.className}>
+        <AuthProvider>
+          <ThemeProvider>
+            <Navigation />
+            {children}
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );
