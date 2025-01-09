@@ -71,3 +71,5 @@ yarn-error.log*
 *.backup
 src/app/page.tsx.backup
 src/components/sections/HomePage.tsx.backup
+backup_tables.sql
+migration_log.txt
