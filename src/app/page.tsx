@@ -1,45 +1,125 @@
-import React from "react";
-import { ChevronRight } from "lucide-react";
-import Link from "next/link";
-import ProgramCards from "@/components/sections/ProgramCards";
-import NavBar from "@/components/sections/NavBar";
+import { Metadata } from "next";
+import HeroSlider from "@/components/slider/HeroSlider";
+import { prisma } from "@/lib/prisma";
 
-export default function Home() {
+export const metadata: Metadata = {
+  title: "Kezdőlap - Lovas Zoltán György",
+  description:
+    "Mindenki Magyarországa Néppárt - Lovas Zoltán György hivatalos weboldala",
+};
+
+export default async function Home() {
+  // Aktív slide-ok lekérése
+  const slides = await prisma.slide.findMany({
+    where: {
+      isActive: true,
+    },
+    orderBy: {
+      order: "asc",
+    },
+  });
+
   return (
-    <div className="min-h-screen bg-white dark:bg-[#1C1C1C] transition-colors duration-200">
-      <NavBar />
-      {/* Hero Section */}
-      <div className="relative bg-gradient-to-r from-[#6DAEF0] to-[#8DEBD1] pt-20">
-        <div className="absolute inset-0 bg-grid-white/[0.1] bg-[size:20px_20px]" />
-        <div className="max-w-7xl mx-auto px-4 py-24 sm:py-32">
-          <div className="text-center relative z-10">
-            <h1 className="text-4xl md:text-7xl font-bold text-white mb-8 leading-tight">
-              Építsük együtt
-              <span className="block">Magyarország jövőjét</span>
-            </h1>
-            <p className="mt-6 text-lg md:text-xl text-gray-100 max-w-2xl mx-auto">
-              Modern megoldások, átlátható kormányzás, fenntartható fejlődés
+    <main className="min-h-screen">
+      {/* Hero Slider */}
+      <HeroSlider slides={slides} />
+
+      {/* Program, Események, Kapcsolat kártyák */}
+      <div className="max-w-7xl mx-auto px-4 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Program kártya */}
+          <div className="bg-blue-600 text-white rounded-2xl p-8 hover:shadow-xl transition duration-300">
+            <h2 className="text-2xl font-bold mb-4">Programom</h2>
+            <p className="mb-6">
+              Ismerje meg részletes politikai programomat és terveimet az ország
+              fejlesztésére.
             </p>
-            <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/program"
-                className="inline-flex items-center px-6 md:px-8 py-3 md:py-4 text-base md:text-lg font-medium rounded-full text-gray-900 bg-white hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl"
+            <a
+              href="/program"
+              className="inline-flex items-center text-lg font-medium hover:underline"
+            >
+              Részletek
+              <svg
+                className="w-5 h-5 ml-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                Programom megismerése
-                <ChevronRight className="ml-2 h-5 w-5" />
-              </Link>
-              <Link
-                href="/esemenyek"
-                className="inline-flex items-center px-6 md:px-8 py-3 md:py-4 text-base md:text-lg font-medium rounded-full text-white border-2 border-white/30 hover:bg-white/10 transition-all duration-300"
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </a>
+          </div>
+
+          {/* Események kártya */}
+          <div className="bg-purple-600 text-white rounded-2xl p-8 hover:shadow-xl transition duration-300">
+            <h2 className="text-2xl font-bold mb-4">Események</h2>
+            <p className="mb-6">
+              Csatlakozzon hozzánk a következő rendezvényeken és mondja el
+              véleményét személyesen.
+            </p>
+            <a
+              href="/esemenyek"
+              className="inline-flex items-center text-lg font-medium hover:underline"
+            >
+              Események
+              <svg
+                className="w-5 h-5 ml-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                Események
-              </Link>
-            </div>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </a>
+          </div>
+
+          {/* Kapcsolat kártya */}
+          <div className="bg-blue-600 text-white rounded-2xl p-8 hover:shadow-xl transition duration-300">
+            <h2 className="text-2xl font-bold mb-4">Kapcsolat</h2>
+            <p className="mb-6">
+              Vegye fel velem a kapcsolatot kérdéseivel, javaslataival. Minden
+              vélemény számít!
+            </p>
+            <a
+              href="/kapcsolat"
+              className="inline-flex items-center text-lg font-medium hover:underline"
+            >
+              Kapcsolat
+              <svg
+                className="w-5 h-5 ml-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
+              </svg>
+            </a>
           </div>
         </div>
       </div>
-      {/* Program Cards Section */}
-      <ProgramCards />
-    </div>
+
+      {/* Legfrissebb Hírek szekció */}
+      <div className="max-w-7xl mx-auto px-4 py-16">
+        <h2 className="text-4xl font-bold text-center mb-12">
+          Legfrissebb Hírek
+        </h2>
+        {/* Itt jöhetnek a hírek... */}
+      </div>
+    </main>
   );
 }
