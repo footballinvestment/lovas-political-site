@@ -2,11 +2,10 @@
 import React from "react";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
-import ThemeSwitcher from "@/components/ui/ThemeSwitcher";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 const Navigation = () => {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
-
   const menuItems = [
     { href: "/", text: "Kezdőlap" },
     { href: "/rolam", text: "Rólam" },
@@ -14,7 +13,6 @@ const Navigation = () => {
     { href: "/esemenyek", text: "Események" },
     { href: "/hirek", text: "Hírek" },
   ];
-
   return (
     <nav className="w-full fixed top-0 bg-white/70 backdrop-blur-md z-50 dark:bg-black/70">
       <div className="max-w-7xl mx-auto px-4">
@@ -26,7 +24,6 @@ const Navigation = () => {
           >
             Lovas Zoltán György
           </Link>
-
           {/* Desktop Menu */}
           <div className="md:flex hidden items-center space-x-8">
             {menuItems.map((item) => (
@@ -44,12 +41,11 @@ const Navigation = () => {
             >
               Kapcsolat
             </Link>
-            <ThemeSwitcher />
+            <ThemeToggle />
           </div>
-
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center space-x-4">
-            <ThemeSwitcher />
+            <ThemeToggle />
             <button
               className="text-gray-700 dark:text-gray-200"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -58,7 +54,6 @@ const Navigation = () => {
             </button>
           </div>
         </div>
-
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden bg-white/95 dark:bg-black/95 backdrop-blur-md">
@@ -85,5 +80,4 @@ const Navigation = () => {
     </nav>
   );
 };
-
 export default Navigation;

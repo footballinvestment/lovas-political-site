@@ -2,8 +2,8 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Metadata } from "next";
 import { AuthProvider } from "@/components/auth/AuthProvider";
-import { ThemeProvider } from "@/context/ThemeContext";
-import Navigation from "@/components/Navigation";
+import { ThemeProvider } from "@/components/theme/theme-provider";
+import MainLayout from "@/components/layout/MainLayout";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -18,12 +18,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="hu">
+    <html lang="hu" suppressHydrationWarning>
       <body className={inter.className}>
         <AuthProvider>
-          <ThemeProvider>
-            <Navigation />
-            {children}
+          <ThemeProvider defaultTheme="light" storageKey="app-theme">
+            <MainLayout>{children}</MainLayout>
           </ThemeProvider>
         </AuthProvider>
       </body>

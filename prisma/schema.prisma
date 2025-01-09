@@ -1,6 +1,7 @@
 generator client {
   provider = "prisma-client-js"
 }
+
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
@@ -59,6 +60,7 @@ model Account {
   id_token          String? @db.Text
   session_state     String?
   User              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([provider, providerAccountId])
   @@index([userId], map: "Account_userId_fkey")
 }
@@ -69,6 +71,7 @@ model Session {
   userId       String
   expires      DateTime
   User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId], map: "Session_userId_fkey")
 }
 
@@ -132,6 +135,28 @@ model Contact {
   status          ContactStatus @default(NEW)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
-  
+
   @@map("contacts")
+}
+
+enum SlideType {
+  GRADIENT
+  IMAGE
+  VIDEO
+}
+
+model Slide {
+  id           String    @id @default(cuid())
+  type         SlideType
+  title        String    @db.VarChar(255)
+  subtitle     String?   @db.Text
+  order        Int       @default(0)
+  isActive     Boolean   @default(true)
+  gradientFrom String?   @db.VarChar(255)
+  gradientTo   String?   @db.VarChar(255)
+  mediaUrl     String?   @db.VarChar(255)
+  ctaText      String?   @db.VarChar(255)
+  ctaLink      String?   @db.VarChar(255)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }

@@ -2,11 +2,10 @@
 import React, { useState } from "react";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
-import ThemeSwitcher from "@/components/ui/ThemeSwitcher";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 export default function NavBar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
   return (
     <nav className="backdrop-blur-md bg-white/70 dark:bg-black/70 fixed w-full z-50">
       <div className="max-w-7xl mx-auto px-4">
@@ -45,7 +44,7 @@ export default function NavBar() {
             >
               Hírek
             </Link>
-            <ThemeSwitcher />
+            <ThemeToggle />
             <Link
               href="/kapcsolat"
               className="px-6 py-2 bg-gradient-to-r from-[#6DAEF0] to-[#8DEBD1] text-gray-900 rounded-full hover:shadow-lg hover:shadow-[#6DAEF0]/20 transition-all duration-300 text-lg"
@@ -55,7 +54,7 @@ export default function NavBar() {
           </div>
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center">
-            <ThemeSwitcher />
+            <ThemeToggle />
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="ml-4 text-gray-700 dark:text-gray-200"
