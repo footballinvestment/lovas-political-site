@@ -1,11 +1,9 @@
 "use client";
-
 import { Moon, Sun } from "lucide-react";
-import { useTheme } from "./theme-provider";
+import { useTheme } from "@/context/ThemeContext"; // Ezt módosítottuk
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
-
   return (
     <button
       onClick={() => setTheme(theme === "light" ? "dark" : "light")}

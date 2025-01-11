@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
-import { Slide } from "@prisma/client";
+import { Slide, SlideType } from "@prisma/client";
+import { VideoUpload } from "@/components/VideoUpload";
+import { ImageUpload } from "@/components/ImageUpload";
 
 interface EditSlidePageProps {
   params: {
@@ -19,7 +21,7 @@ export default function EditSlidePage({ params }: EditSlidePageProps) {
   const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<Partial<Slide>>({
-    type: "GRADIENT",
+    type: "GRADIENT" as SlideType,
     title: "",
     subtitle: "",
     gradientFrom: "",
@@ -28,6 +30,10 @@ export default function EditSlidePage({ params }: EditSlidePageProps) {
     ctaText: "",
     ctaLink: "",
     isActive: true,
+    videoType: "mp4",
+    autoPlay: true,
+    isLoop: true,
+    isMuted: true,
   });
 
   useEffect(() => {
@@ -63,7 +69,10 @@ export default function EditSlidePage({ params }: EditSlidePageProps) {
       });
 
       if (!response.ok) {
-        throw new Error("Hiba történt a slide módosításakor");
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || "Hiba történt a slide módosításakor"
+        );
       }
 
       router.push("/admin/slides");
@@ -108,7 +117,10 @@ export default function EditSlidePage({ params }: EditSlidePageProps) {
             <select
               value={formData.type}
               onChange={(e) =>
-                setFormData((prev) => ({ ...prev, type: e.target.value }))
+                setFormData((prev) => ({
+                  ...prev,
+                  type: e.target.value as SlideType,
+                }))
               }
               className="mt-1 block w-full rounded-md border border-gray-300 p-2"
             >
@@ -124,7 +136,7 @@ export default function EditSlidePage({ params }: EditSlidePageProps) {
             Cím
             <input
               type="text"
-              value={formData.title}
+              value={formData.title || ""}
               onChange={(e) =>
                 setFormData((prev) => ({ ...prev, title: e.target.value }))
               }
@@ -210,7 +222,6 @@ export default function EditSlidePage({ params }: EditSlidePageProps) {
               </label>
             </div>
 
-            {/* Előnézet */}
             <div>
               <label className="block text-sm font-medium mb-2">Előnézet</label>
               <div
@@ -223,20 +234,78 @@ export default function EditSlidePage({ params }: EditSlidePageProps) {
           </>
         )}
 
-        {(formData.type === "IMAGE" || formData.type === "VIDEO") && (
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Média URL
-              <input
-                type="text"
-                value={formData.mediaUrl || ""}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, mediaUrl: e.target.value }))
-                }
-                className="mt-1 block w-full rounded-md border border-gray-300 p-2"
-                required
-              />
-            </label>
+        {formData.type === "IMAGE" && (
+          <ImageUpload
+            onUpload={(url) =>
+              setFormData((prev) => ({ ...prev, mediaUrl: url }))
+            }
+            currentImage={formData.mediaUrl}
+            className="mb-4"
+          />
+        )}
+
+        {formData.type === "VIDEO" && (
+          <div className="space-y-4">
+            <VideoUpload
+              onUpload={(url, type) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  mediaUrl: url,
+                  videoType: type.split("/")[1], // 'video/mp4' -> 'mp4'
+                }));
+              }}
+              currentVideo={formData.mediaUrl}
+              className="mb-4"
+            />
+
+            <div className="space-y-2">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={formData.autoPlay}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      autoPlay: e.target.checked,
+                    }))
+                  }
+                  className="rounded border-gray-300"
+                />
+                <span className="text-sm font-medium">
+                  Automatikus lejátszás
+                </span>
+              </label>
+
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={formData.isLoop}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      isLoop: e.target.checked,
+                    }))
+                  }
+                  className="rounded border-gray-300"
+                />
+                <span className="text-sm font-medium">Ismétlés</span>
+              </label>
+
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={formData.isMuted}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      isMuted: e.target.checked,
+                    }))
+                  }
+                  className="rounded border-gray-300"
+                />
+                <span className="text-sm font-medium">Némítás</span>
+              </label>
+            </div>
           </div>
         )}
 

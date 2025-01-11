@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Slide } from "@prisma/client";
 import Link from "next/link";
@@ -19,6 +19,7 @@ export default function HeroSlider({
   const [isPaused, setIsPaused] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
 
   useEffect(() => {
     if (!isPaused) {
@@ -32,14 +33,36 @@ export default function HeroSlider({
     }
   }, [currentIndex, isTransitioning, isPaused, autoSlideInterval]);
 
+  // Képek és videók előtöltése
   useEffect(() => {
     slides.forEach((slide) => {
       if (slide.type === "IMAGE" && slide.mediaUrl) {
         const img = new Image();
         img.src = slide.mediaUrl;
+      } else if (slide.type === "VIDEO" && slide.mediaUrl) {
+        const video = document.createElement("video");
+        video.src = slide.mediaUrl;
+        video.preload = "auto";
       }
     });
   }, [slides]);
+
+  // Videó kezelés slide váltáskor
+  useEffect(() => {
+    slides.forEach((slide, index) => {
+      if (slide.type === "VIDEO" && videoRefs.current[slide.id]) {
+        const video = videoRefs.current[slide.id];
+        if (index === currentIndex) {
+          video?.play().catch(() => {
+            // Automata lejátszás blokkolva - silent fail
+          });
+        } else {
+          video?.pause();
+          if (video) video.currentTime = 0;
+        }
+      }
+    });
+  }, [currentIndex, slides]);
 
   const handleNext = useCallback(() => {
     if (!isTransitioning) {
@@ -121,6 +144,20 @@ export default function HeroSlider({
               }}
             />
             <div className="absolute inset-0 bg-black/50 backdrop-brightness-75" />
+          </div>
+        ) : slide.type === "VIDEO" ? (
+          <div className="absolute inset-0">
+            <video
+              ref={(el) => (videoRefs.current[slide.id] = el)}
+              className="absolute inset-0 w-full h-full object-cover"
+              src={slide.mediaUrl || undefined}
+              playsInline
+              autoPlay={slide.autoPlay}
+              loop={slide.isLoop}
+              muted={slide.isMuted}
+              controls={false}
+            />
+            <div className="absolute inset-0 bg-black/30 backdrop-brightness-90" />
           </div>
         ) : null}
 

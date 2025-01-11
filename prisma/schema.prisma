@@ -157,6 +157,11 @@ model Slide {
   mediaUrl     String?   @db.VarChar(255)
   ctaText      String?   @db.VarChar(255)
   ctaLink      String?   @db.VarChar(255)
+  // Videó mezők az új nevekkel
+  videoType    String?   @db.VarChar(10)
+  autoPlay     Boolean   @default(true)
+  isLoop       Boolean   @default(true)
+  isMuted      Boolean   @default(true)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 }

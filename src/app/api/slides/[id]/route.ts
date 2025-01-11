@@ -1,3 +1,44 @@
+import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
+import { SlideType } from "@prisma/client";
+import {
+  validateVideoData,
+  prepareVideoData,
+  validateMediaUrl,
+} from "@/utils/validators/slideValidators";
+import { unlink } from "fs/promises";
+import path from "path";
+
+// GET egy specifikus slide lekérése
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const slide = await prisma.slide.findUnique({
+      where: {
+        id: params.id,
+      },
+    });
+
+    if (!slide) {
+      return NextResponse.json(
+        { error: "A slide nem található" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(slide);
+  } catch (error) {
+    console.error("Error in GET /api/slides/[id]:", error);
+    return NextResponse.json(
+      { error: "Hiba történt a slide lekérése során" },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT /api/slides/[id] - Slide módosítása
 export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
@@ -6,22 +47,56 @@ export async function PUT(
     const json = await request.json();
     console.log("Updating slide:", { id: params.id, data: json });
 
+    // Slide típus ellenőrzése
+    if (json.type && !Object.values(SlideType).includes(json.type)) {
+      return NextResponse.json(
+        { error: "Érvénytelen slide típus" },
+        { status: 400 }
+      );
+    }
+
+    // Videó adatok validálása
+    try {
+      if (json.type) {
+        validateVideoData(json);
+      }
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : "Validációs hiba" },
+        { status: 400 }
+      );
+    }
+
+    // Media URL validálása
+    if (json.mediaUrl) {
+      try {
+        validateMediaUrl(json.mediaUrl, json.type);
+      } catch (error) {
+        return NextResponse.json(
+          {
+            error:
+              error instanceof Error ? error.message : "URL validációs hiba",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // Ha sorrend módosítás történik
-    if (json.order !== undefined) {
+    if (typeof json.order === "number") {
       const currentSlide = await prisma.slide.findUnique({
         where: { id: params.id },
       });
 
       if (!currentSlide) {
-        return NextResponse.json({ error: "Slide not found" }, { status: 404 });
+        return NextResponse.json(
+          { error: "A slide nem található" },
+          { status: 404 }
+        );
       }
-
-      console.log("Current slide:", currentSlide);
-      console.log("New order:", json.order);
 
       // Többi slide átrendezése
       if (json.order > currentSlide.order) {
-        // Lefelé mozgatás
         await prisma.slide.updateMany({
           where: {
             AND: [
@@ -33,7 +108,6 @@ export async function PUT(
           data: { order: { decrement: 1 } },
         });
       } else {
-        // Felfelé mozgatás
         await prisma.slide.updateMany({
           where: {
             AND: [
@@ -45,20 +119,14 @@ export async function PUT(
           data: { order: { increment: 1 } },
         });
       }
-
-      // Aktuális slide frissítése
-      const updatedSlide = await prisma.slide.update({
-        where: { id: params.id },
-        data: { order: json.order },
-      });
-
-      return NextResponse.json(updatedSlide);
     }
 
-    // Ha nem sorrend módosítás, akkor egyszerű update
+    // Slide adatok előkészítése
+    const updateData = prepareVideoData(json);
+
     const updatedSlide = await prisma.slide.update({
       where: { id: params.id },
-      data: json,
+      data: updateData,
     });
 
     return NextResponse.json(updatedSlide);
@@ -66,8 +134,76 @@ export async function PUT(
     console.error("Error in PUT /api/slides/[id]:", error);
     return NextResponse.json(
       {
-        error: "Error updating slide",
-        details: error instanceof Error ? error.message : "Unknown error",
+        error: "Hiba történt a slide módosítása során",
+        details: error instanceof Error ? error.message : "Ismeretlen hiba",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/slides/[id] - Slide törlése
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    // Először lekérjük a slide-ot
+    const slide = await prisma.slide.findUnique({
+      where: {
+        id: params.id,
+      },
+    });
+
+    if (!slide) {
+      return NextResponse.json(
+        { error: "A slide nem található" },
+        { status: 404 }
+      );
+    }
+
+    // Ha van hozzá tartozó média fájl, töröljük azt is
+    if (slide.mediaUrl) {
+      try {
+        const filePath = path.join(process.cwd(), "public", slide.mediaUrl);
+        await unlink(filePath);
+      } catch (error) {
+        console.error("Hiba a média fájl törlése során:", error);
+        // Nem dobunk hibát, mert a slide-ot mindenképp törölni szeretnénk
+      }
+    }
+
+    // Töröljük a slide-ot
+    await prisma.slide.delete({
+      where: {
+        id: params.id,
+      },
+    });
+
+    // Átrendezzük a többi slide order értékét
+    await prisma.slide.updateMany({
+      where: {
+        order: {
+          gt: slide.order,
+        },
+      },
+      data: {
+        order: {
+          decrement: 1,
+        },
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "A slide sikeresen törölve",
+    });
+  } catch (error) {
+    console.error("Error in DELETE /api/slides/[id]:", error);
+    return NextResponse.json(
+      {
+        error: "Hiba történt a slide törlése során",
+        details: error instanceof Error ? error.message : "Ismeretlen hiba",
       },
       { status: 500 }
     );
