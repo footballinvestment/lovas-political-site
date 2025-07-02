@@ -122,6 +122,13 @@ enum ContactStatus {
   CLOSED
 }
 
+enum ProgramStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
 model Contact {
   id              String        @id @default(cuid())
   name            String
@@ -164,4 +171,16 @@ model Slide {
   isMuted      Boolean   @default(true)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+}
+
+model ProgramPoint {
+  id          String            @id @default(cuid())
+  title       String            @db.VarChar(255)
+  category    String            @db.VarChar(255)
+  description String            @db.Text
+  details     String            @db.Text
+  priority    Int               @default(1)
+  status      ProgramStatus     @default(PLANNED)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 }

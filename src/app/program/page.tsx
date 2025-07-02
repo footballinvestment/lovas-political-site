@@ -5,12 +5,18 @@ import {
   getActiveThemeByCategory,
   getGradientStyle,
 } from "@/utils/themes";
+import { generatePageMetadata } from "@/lib/seo";
+import { ProgramPointStructuredData } from "@/components/seo/StructuredData";
 
-export const metadata: Metadata = {
-  title: "Politikai Program | Lovas Zoltán György",
-  description:
-    "Ismerje meg részletes politikai programunkat és terveinket az ország fejlesztésére.",
-};
+export const metadata = generatePageMetadata(
+  "Politikai Program",
+  "Ismerje meg részletes politikai programunkat és terveinket az ország fejlesztésére. Modern megoldások a környezetvédelem, oktatás, egészségügy és szociális ügyek területén.",
+  "/program",
+  {
+    keywords: "politikai program, Lovas Zoltán György, környezetvédelem, oktatás, egészségügy, szociális ügyek",
+    image: "/images/og-program.jpg",
+  }
+);
 
 interface ProgramPoint {
   id: string;
@@ -19,16 +25,28 @@ interface ProgramPoint {
   description: string;
   details: string;
   priority: number;
-  status: "tervezett" | "folyamatban" | "megvalositott";
+  status: "PLANNED" | "IN_PROGRESS" | "COMPLETED" | "ON_HOLD";
+  createdAt: string;
+  updatedAt: string;
 }
 
 async function getProgramPoints() {
   try {
-    const res = await fetch("http://localhost:3000/api/program", {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+    const res = await fetch(`${baseUrl}/api/program`, {
       next: { revalidate: 3600 },
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
-    if (!res.ok) throw new Error("Failed to fetch program points");
-    return await res.json();
+    
+    if (!res.ok) {
+      throw new Error(`Failed to fetch program points: ${res.status}`);
+    }
+    
+    const response = await res.json();
+    // Handle the new API response structure
+    return response.data || response || [];
   } catch (error) {
     console.error("Error fetching program points:", error);
     return [];
@@ -66,20 +84,35 @@ export default async function ProgramPage() {
   const categoryThemes = await getCategoryThemes(Object.keys(groupedPrograms));
 
   return (
-    <div className="min-h-screen bg-[#1C1C1C]">
-      <div className="relative pt-20" style={getGradientStyle(globalTheme)}>
-        <div className="absolute inset-0 bg-grid-white/[0.1] bg-[size:20px_20px]" />
-        <div className="max-w-7xl mx-auto px-4 py-16 sm:py-24 relative z-10">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-              Programunk
-            </h1>
-            <p className="text-xl text-white/90 max-w-2xl mx-auto">
-              Modern megoldások egy igazságosabb, élhetőbb Magyarországért
-            </p>
+    <>
+      {/* Structured Data for Program Points */}
+      {Object.entries(groupedPrograms).map(([category, points]) =>
+        points.map((point) => (
+          <ProgramPointStructuredData
+            key={point.id}
+            headline={point.title}
+            description={point.description}
+            datePublished={new Date().toISOString()}
+            url={`/program#${point.id}`}
+            category={category}
+          />
+        ))
+      )}
+      
+      <div className="min-h-screen bg-[#1C1C1C]">
+        <div className="relative pt-20" style={getGradientStyle(globalTheme)}>
+          <div className="absolute inset-0 bg-grid-white/[0.1] bg-[size:20px_20px]" />
+          <div className="max-w-7xl mx-auto px-4 py-16 sm:py-24 relative z-10">
+            <div className="text-center">
+              <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
+                Programunk
+              </h1>
+              <p className="text-xl text-white/90 max-w-2xl mx-auto">
+                Modern megoldások egy igazságosabb, élhetőbb Magyarországért
+              </p>
+            </div>
           </div>
         </div>
-      </div>
 
       <div className="max-w-7xl mx-auto px-4 py-12">
         {Object.entries(groupedPrograms).length > 0 ? (
@@ -102,7 +135,10 @@ export default async function ProgramPage() {
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="text-xl font-bold">{point.title}</h3>
                           <span className="ml-4 px-3 py-1 rounded-full bg-white/20">
-                            {point.status}
+                            {point.status === "PLANNED" ? "Tervezett" : 
+                             point.status === "IN_PROGRESS" ? "Folyamatban" :
+                             point.status === "COMPLETED" ? "Megvalósítva" : 
+                             point.status === "ON_HOLD" ? "Felfüggesztve" : point.status}
                           </span>
                         </div>
                         <p className="mb-4 opacity-90">{point.description}</p>
@@ -125,5 +161,6 @@ export default async function ProgramPage() {
         )}
       </div>
     </div>
+    </>
   );
 }

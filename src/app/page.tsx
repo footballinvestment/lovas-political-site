@@ -1,12 +1,17 @@
 import HeroSlider from "@/components/slider/HeroSlider";
 import ClientPage from "@/components/sections/ClientPage";
 import { Slide, SlideType } from "@prisma/client";
+import { generatePageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Kezdőlap - Lovas Zoltán György",
-  description:
-    "Mindenki Magyarországa Néppárt - Lovas Zoltán György hivatalos weboldala",
-};
+export const metadata = generatePageMetadata(
+  "Kezdőlap",
+  "Lovas Zoltán György hivatalos weboldala. Mindenki Magyarországa Néppárt - Modern megoldások egy igazságosabb, élhetőbb Magyarországért.",
+  "/",
+  {
+    keywords: "Lovas Zoltán György, Mindenki Magyarországa Néppárt, politika, Magyarország, kezdőlap",
+    image: "/images/og-home.jpg",
+  }
+);
 
 const testSlides: Slide[] = [
   {

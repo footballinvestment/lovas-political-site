@@ -1,26 +1,163 @@
+// src/components/slider/HeroSlider.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { Slide } from "@prisma/client";
 import Link from "next/link";
+import Image from "next/image";
+import { AdaptiveVideoPlayer, useAdaptiveVideo } from "@/components/video/AdaptiveVideoPlayer";
+import { VideoUtils } from "@/lib/video-compression";
+import { usePerformanceMonitor } from "@/lib/performance";
+
+interface VideoSource {
+  src: string;
+  quality: 'low' | 'medium' | 'high' | 'ultra';
+  format: 'mp4' | 'webm';
+  bitrate: number;
+  resolution: {
+    width: number;
+    height: number;
+  };
+}
+
+interface OptimizedSlide extends Slide {
+  videoSources?: VideoSource[];
+  poster?: string;
+}
 
 interface HeroSliderProps {
-  slides: Slide[];
+  slides: OptimizedSlide[];
   autoSlideInterval?: number;
+  enableVideoCompression?: boolean;
 }
 
 export default function HeroSlider({
   slides,
   autoSlideInterval = 5000,
+  enableVideoCompression = true,
 }: HeroSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
+  const [loadedMedia, setLoadedMedia] = useState<Set<string>>(new Set());
+  const [loadingMedia, setLoadingMedia] = useState<Set<string>>(new Set());
+  const [videoSources, setVideoSources] = useState<{ [key: string]: VideoSource[] }>({});
+  const [posters, setPosters] = useState<{ [key: string]: string }>({});
+  
+  const imageRefs = useRef<{ [key: string]: HTMLImageElement | null }>({});
+  
+  // Performance monitoring
+  const { renderTime } = usePerformanceMonitor('HeroSlider');
 
+  // Initialize video sources for adaptive streaming
+  useEffect(() => {
+    const initializeVideoSources = async () => {
+      const newVideoSources: { [key: string]: VideoSource[] } = {};
+      const newPosters: { [key: string]: string } = {};
+
+      for (const slide of slides) {
+        if (slide.type === "VIDEO" && slide.mediaUrl) {
+          // Check if we have predefined video sources
+          if (slide.videoSources && slide.videoSources.length > 0) {
+            newVideoSources[slide.id] = slide.videoSources;
+          } else if (enableVideoCompression) {
+            // Generate adaptive video sources from the original
+            newVideoSources[slide.id] = await generateAdaptiveVideoSources(slide.mediaUrl);
+          } else {
+            // Use original video as single source
+            newVideoSources[slide.id] = [{
+              src: slide.mediaUrl,
+              quality: 'medium',
+              format: 'mp4',
+              bitrate: 1000,
+              resolution: { width: 1280, height: 720 },
+            }];
+          }
+
+          // Generate poster image if available
+          if (slide.poster) {
+            newPosters[slide.id] = slide.poster;
+          } else {
+            try {
+              const posterUrl = await VideoUtils.generatePoster(slide.mediaUrl);
+              newPosters[slide.id] = posterUrl;
+            } catch (error) {
+              console.warn('Failed to generate poster for', slide.mediaUrl, error);
+            }
+          }
+        }
+      }
+
+      setVideoSources(newVideoSources);
+      setPosters(newPosters);
+    };
+
+    initializeVideoSources();
+  }, [slides, enableVideoCompression]);
+
+  // Generate adaptive video sources
+  const generateAdaptiveVideoSources = async (originalUrl: string): Promise<VideoSource[]> => {
+    // Check if compressed versions exist
+    try {
+      const response = await fetch('/api/video/compress-existing', {
+        method: 'GET',
+      });
+      
+      if (response.ok) {
+        const { videos } = await response.json();
+        const baseName = originalUrl.split('/').pop()?.split('.')[0];
+        
+        const adaptiveSources: VideoSource[] = [];
+        
+        // Map compressed videos to sources
+        const qualityMap = {
+          '_360p': 'low' as const,
+          '_480p': 'medium' as const,
+          '_720p': 'high' as const,
+          '_1080p': 'ultra' as const,
+        };
+        
+        for (const video of videos) {
+          for (const [suffix, quality] of Object.entries(qualityMap)) {
+            if (video.filename.includes(baseName) && video.filename.includes(suffix)) {
+              const format = video.filename.endsWith('.webm') ? 'webm' : 'mp4';
+              
+              adaptiveSources.push({
+                src: video.url,
+                quality,
+                format,
+                bitrate: quality === 'low' ? 400 : quality === 'medium' ? 800 : quality === 'high' ? 1200 : 2000,
+                resolution: {
+                  width: quality === 'low' ? 640 : quality === 'medium' ? 854 : quality === 'high' ? 1280 : 1920,
+                  height: quality === 'low' ? 360 : quality === 'medium' ? 480 : quality === 'high' ? 720 : 1080,
+                },
+              });
+            }
+          }
+        }
+        
+        if (adaptiveSources.length > 0) {
+          return adaptiveSources;
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to fetch compressed videos:', error);
+    }
+    
+    // Fallback to original video
+    return [{
+      src: originalUrl,
+      quality: 'medium',
+      format: 'mp4',
+      bitrate: 1000,
+      resolution: { width: 1280, height: 720 },
+    }];
+  };
+
+  // Auto slide functionality
   useEffect(() => {
     if (!isPaused) {
       const timer = setInterval(() => {
@@ -33,36 +170,51 @@ export default function HeroSlider({
     }
   }, [currentIndex, isTransitioning, isPaused, autoSlideInterval]);
 
-  // Képek és videók előtöltése
+  // Preload strategy for optimized loading
   useEffect(() => {
-    slides.forEach((slide) => {
-      if (slide.type === "IMAGE" && slide.mediaUrl) {
-        const img = new Image();
-        img.src = slide.mediaUrl;
-      } else if (slide.type === "VIDEO" && slide.mediaUrl) {
-        const video = document.createElement("video");
-        video.src = slide.mediaUrl;
-        video.preload = "auto";
-      }
-    });
-  }, [slides]);
-
-  // Videó kezelés slide váltáskor
-  useEffect(() => {
-    slides.forEach((slide, index) => {
-      if (slide.type === "VIDEO" && videoRefs.current[slide.id]) {
-        const video = videoRefs.current[slide.id];
-        if (index === currentIndex) {
-          video?.play().catch(() => {
-            // Automata lejátszás blokkolva - silent fail
-          });
-        } else {
-          video?.pause();
-          if (video) video.currentTime = 0;
+    const preloadMedia = async () => {
+      // Preload current slide immediately
+      const currentSlide = slides[currentIndex];
+      if (currentSlide) {
+        setLoadingMedia(prev => new Set(prev).add(currentSlide.id));
+        
+        if (currentSlide.type === "IMAGE" && currentSlide.mediaUrl) {
+          const img = new Image();
+          img.onload = () => {
+            setLoadedMedia(prev => new Set(prev).add(currentSlide.id));
+            setLoadingMedia(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(currentSlide.id);
+              return newSet;
+            });
+          };
+          img.onerror = () => {
+            setLoadingMedia(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(currentSlide.id);
+              return newSet;
+            });
+          };
+          img.src = currentSlide.mediaUrl;
         }
       }
-    });
-  }, [currentIndex, slides]);
+      
+      // Preload next slide with lower priority
+      setTimeout(() => {
+        const nextIndex = (currentIndex + 1) % slides.length;
+        const nextSlide = slides[nextIndex];
+        if (nextSlide && !loadedMedia.has(nextSlide.id) && !loadingMedia.has(nextSlide.id)) {
+          if (nextSlide.type === "IMAGE" && nextSlide.mediaUrl) {
+            const img = new Image();
+            img.onload = () => setLoadedMedia(prev => new Set(prev).add(nextSlide.id));
+            img.src = nextSlide.mediaUrl;
+          }
+        }
+      }, 1000);
+    };
+
+    preloadMedia();
+  }, [currentIndex, slides, loadedMedia, loadingMedia]);
 
   const handleNext = useCallback(() => {
     if (!isTransitioning) {
@@ -121,9 +273,19 @@ export default function HeroSlider({
     const commonClasses = `absolute inset-0 transition-opacity duration-750 ${
       isActive ? "opacity-100" : "opacity-0 pointer-events-none"
     }`;
+    
+    const isLoading = loadingMedia.has(slide.id);
+    const isLoaded = loadedMedia.has(slide.id);
 
     return (
       <div key={slide.id} className={commonClasses}>
+        {/* Loading indicator */}
+        {isLoading && isActive && (
+          <div className="absolute inset-0 bg-gray-900 flex items-center justify-center z-10">
+            <Loader2 className="w-8 h-8 animate-spin text-white" />
+          </div>
+        )}
+        
         {/* Háttér */}
         {slide.type === "GRADIENT" ? (
           <div
@@ -134,28 +296,64 @@ export default function HeroSlider({
           >
             <div className="absolute inset-0 bg-grid-white/[0.1] bg-[size:20px_20px]" />
           </div>
-        ) : slide.type === "IMAGE" ? (
+        ) : slide.type === "IMAGE" && slide.mediaUrl ? (
           <div className="absolute inset-0">
-            <div
-              className="absolute inset-0 bg-cover bg-center transition-transform duration-[2000ms] hover:scale-105"
-              style={{
-                backgroundImage: `url(${slide.mediaUrl})`,
-                transform: isActive ? "scale(1.0)" : "scale(1.1)",
+            <Image
+              src={slide.mediaUrl}
+              alt={slide.title}
+              fill
+              className={`object-cover transition-all duration-[2000ms] ${
+                isActive ? "scale-100" : "scale-110"
+              } ${!isLoaded ? "blur-sm" : ""}`}
+              priority={isActive}
+              quality={90}
+              sizes="100vw"
+              onLoad={() => {
+                setLoadedMedia(prev => new Set(prev).add(slide.id));
+                setLoadingMedia(prev => {
+                  const newSet = new Set(prev);
+                  newSet.delete(slide.id);
+                  return newSet;
+                });
+              }}
+              onError={() => {
+                setLoadingMedia(prev => {
+                  const newSet = new Set(prev);
+                  newSet.delete(slide.id);
+                  return newSet;
+                });
               }}
             />
             <div className="absolute inset-0 bg-black/50 backdrop-brightness-75" />
           </div>
-        ) : slide.type === "VIDEO" ? (
+        ) : slide.type === "VIDEO" && videoSources[slide.id] ? (
           <div className="absolute inset-0">
-            <video
-              ref={(el) => (videoRefs.current[slide.id] = el)}
-              className="absolute inset-0 w-full h-full object-cover"
-              src={slide.mediaUrl || undefined}
-              playsInline
-              autoPlay={slide.autoPlay}
-              loop={slide.isLoop}
+            <AdaptiveVideoPlayer
+              sources={videoSources[slide.id]}
+              poster={posters[slide.id]}
+              autoPlay={isActive && slide.autoPlay}
               muted={slide.isMuted}
-              controls={false}
+              loop={slide.isLoop}
+              className="w-full h-full"
+              enableAdaptiveStreaming={true}
+              enableQualitySelector={false} // Hide in hero slider
+              preload={isActive ? 'auto' : 'metadata'}
+              onLoadedData={() => {
+                setLoadedMedia(prev => new Set(prev).add(slide.id));
+                setLoadingMedia(prev => {
+                  const newSet = new Set(prev);
+                  newSet.delete(slide.id);
+                  return newSet;
+                });
+              }}
+              onError={(error) => {
+                console.error('Video playback error:', error);
+                setLoadingMedia(prev => {
+                  const newSet = new Set(prev);
+                  newSet.delete(slide.id);
+                  return newSet;
+                });
+              }}
             />
             <div className="absolute inset-0 bg-black/30 backdrop-brightness-90" />
           </div>
@@ -245,6 +443,13 @@ export default function HeroSlider({
           />
         ))}
       </div>
+
+      {/* Performance indicator (development only) */}
+      {process.env.NODE_ENV === 'development' && renderTime && (
+        <div className="absolute top-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
+          Render: {renderTime.toFixed(1)}ms
+        </div>
+      )}
     </div>
   );
 }

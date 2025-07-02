@@ -1,11 +1,16 @@
 import React from "react";
 import ContactForm from "@/components/ContactForm";
+import { generatePageMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "Kapcsolat - Lovas Zoltán",
-  description:
-    "Vegye fel velem a kapcsolatot kérdéseivel, javaslataival vagy támogatási szándékával.",
-};
+export const metadata = generatePageMetadata(
+  "Kapcsolat",
+  "Vegye fel velem a kapcsolatot kérdéseivel, javaslataival vagy támogatási szándékával. Minden vélemény számít!",
+  "/kapcsolat",
+  {
+    keywords: "kapcsolat, kapcsolatfelvétel, Lovas Zoltán György, email, telefon, fogadóóra",
+    image: "/images/og-contact.jpg",
+  }
+);
 
 export default function ContactPage() {
   return (

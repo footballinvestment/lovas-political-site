@@ -1,27 +1,34 @@
-// jest.config.mjs
 import nextJest from "next/jest.js";
 
 const createJestConfig = nextJest({
-  // Next.js projekt gyökér könyvtárának megadása a Jest számára
   dir: "./",
 });
 
-// Jest beállítások hozzáadása
 const customJestConfig = {
-  setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],
-  testEnvironment: "jest-environment-node",
+  setupFilesAfterEnv: ["<rootDir>/jest.setup.js"], // Jest setup fájl
+  testEnvironment: "jest-environment-jsdom", // Tesztkörnyezet beállítása
   moduleNameMapper: {
-    "^@/(.*)$": "<rootDir>/src/$1",
+    "^@/(.*)$": "<rootDir>/src/$1", // Aliasok kezelése
   },
   transform: {
-    "^.+\\.(t|j)sx?$": ["@swc/jest"],
+    "^.+\\.(t|j)sx?$": ["@swc/jest"], // SWC használata TypeScript és JavaScript fájlokhoz
+    "^.+\\.js$": "jest-esm-transformer", // ESM támogatás
   },
   transformIgnorePatterns: [
-    "/node_modules/(?!uuid)",
-    "^.+\\.module\\.(css|sass|scss)$",
+    "/node_modules/(?!(uuid|next|next-auth|@auth/prisma-adapter|@panva|jose|@babel|@swc)/.*)", // Kizárt modulok
   ],
-  moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"],
+  moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"], // Fájlkiterjesztések
+  testEnvironmentOptions: {
+    customExportConditions: ["node", "node-addons"], // Node.js környezet támogatása
+  },
 };
 
-// createJestConfig használata az aszinkron konfigurációhoz
 export default createJestConfig(customJestConfig);
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  experimental: {
+    forceSwcTransforms: true, // Ez kényszeríti az SWC használatát
+  },
+};
+
+export default nextConfig;

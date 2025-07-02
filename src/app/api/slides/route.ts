@@ -1,84 +1,97 @@
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+// src/app/api/slides/route.ts
 import { NextResponse } from "next/server";
-import { SlideType } from "@prisma/client";
-import {
-  validateSlideData,
-  prepareVideoData,
-} from "@/utils/validators/slideValidators";
+import { prisma } from "@/lib/prisma";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]/route";
+import { withRateLimit } from "@/lib/rate-limit";
 
-// GET /api/slides - Összes slide lekérése
 export async function GET() {
-  try {
-    const slides = await prisma.slide.findMany({
-      orderBy: {
-        order: "asc",
-      },
-    });
-    return NextResponse.json(slides);
-  } catch (error) {
-    console.error("Error in GET /api/slides:", error);
-    return NextResponse.json(
-      { error: "Hiba a slide-ok lekérése során" },
-      { status: 500 }
-    );
-  }
+  return withRateLimit("default", async () => {
+    try {
+      const slides = await prisma.slide.findMany({
+        orderBy: { order: "asc" },
+      });
+      return NextResponse.json(slides);
+    } catch (error) {
+      return NextResponse.json({ error: "Hiba történt" }, { status: 500 });
+    }
+  });
 }
 
-// POST /api/slides - Új slide létrehozása
 export async function POST(request: Request) {
-  try {
-    const json = await request.json();
-    console.log("Creating new slide with data:", json);
-
-    // Slide típus ellenőrzése
-    if (!Object.values(SlideType).includes(json.type)) {
-      return NextResponse.json(
-        { error: "Érvénytelen slide típus" },
-        { status: 400 }
-      );
-    }
-
-    // Slide adatok validálása
+  return withRateLimit("admin", async () => {
     try {
-      validateSlideData(json);
+      const session = await getServerSession(authOptions);
+      if (!session?.user) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const data = await request.json();
+      const slide = await prisma.slide.create({
+        data: {
+          type: data.type,
+          title: data.title,
+          subtitle: data.subtitle || null,
+          order: data.order || 0,
+          isActive: data.isActive || true,
+          gradientFrom: data.gradientFrom || null,
+          gradientTo: data.gradientTo || null,
+          mediaUrl: data.mediaUrl || null,
+          ctaText: data.ctaText || null,
+          ctaLink: data.ctaLink || null,
+          videoType: data.videoType || null,
+          autoPlay: data.autoPlay || true,
+          isLoop: data.isLoop || true,
+          isMuted: data.isMuted || true,
+        },
+      });
+
+      return NextResponse.json(slide);
     } catch (error) {
-      return NextResponse.json(
-        { error: error instanceof Error ? error.message : "Validációs hiba" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Hiba történt" }, { status: 500 });
     }
+  });
+}
 
-    // Get max order
-    const maxOrder = await prisma.slide.findFirst({
-      orderBy: {
-        order: "desc",
-      },
-      select: {
-        order: true,
-      },
-    });
+export async function PUT(request: Request) {
+  return withRateLimit("admin", async () => {
+    try {
+      const session = await getServerSession(authOptions);
+      if (!session?.user) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
 
-    // Slide adatok előkészítése a megfelelő típusokkal
-    const slideData = {
-      ...prepareVideoData(json),
-      order: maxOrder ? maxOrder.order + 1 : 0,
-    };
+      const data = await request.json();
+      const slide = await prisma.slide.update({
+        where: { id: data.id },
+        data,
+      });
 
-    const slide = await prisma.slide.create({
-      data: slideData,
-    });
+      return NextResponse.json(slide);
+    } catch (error) {
+      return NextResponse.json({ error: "Hiba történt" }, { status: 500 });
+    }
+  });
+}
 
-    console.log("Created slide:", slide);
-    return NextResponse.json(slide);
-  } catch (error) {
-    console.error("Error in POST /api/slides:", error);
-    return NextResponse.json(
-      {
-        error: "Hiba a slide létrehozása során",
-        details: error instanceof Error ? error.message : "Ismeretlen hiba",
-      },
-      { status: 500 }
-    );
-  }
+export async function DELETE(request: Request) {
+  return withRateLimit("admin", async () => {
+    try {
+      const session = await getServerSession(authOptions);
+      if (!session?.user) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const { searchParams } = new URL(request.url);
+      const id = searchParams.get("id");
+
+      await prisma.slide.delete({
+        where: { id },
+      });
+
+      return NextResponse.json({ success: true });
+    } catch (error) {
+      return NextResponse.json({ error: "Hiba történt" }, { status: 500 });
+    }
+  });
 }

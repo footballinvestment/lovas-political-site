@@ -1,6 +1,16 @@
 // src/app/hirek/page.tsx
-"use client";
 import HirekSzekcio from "@/components/HirekSzekcio";
+import { generatePageMetadata } from "@/lib/seo";
+
+export const metadata = generatePageMetadata(
+  "Hírek",
+  "Legfrissebb hírek és bejelentések Lovas Zoltán Györgytől és a Mindenki Magyarországa Néppárttól.",
+  "/hirek",
+  {
+    keywords: "hírek, bejelentések, Lovas Zoltán György, politikai hírek, Mindenki Magyarországa Néppárt",
+    image: "/images/og-news.jpg",
+  }
+);
 
 export default function HirekOldal() {
   return (

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { AlertCircle } from "lucide-react";
+import { logServerError } from "@/lib/error-logger";
 
 export default function ProgramError({
   error,
@@ -11,8 +12,15 @@ export default function ProgramError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // Log the error to your error reporting service
-    console.error(error);
+    // Log the error with proper context
+    logServerError(error, {
+      digest: error.digest,
+      page: "program",
+      component: "ProgramPage",
+      userAgent: typeof window !== "undefined" ? navigator.userAgent : undefined,
+      url: typeof window !== "undefined" ? window.location.href : undefined,
+      timestamp: new Date(),
+    });
   }, [error]);
 
   return (
